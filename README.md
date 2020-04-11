@@ -1,2 +1,2 @@
-# c-repl
+# C REPL
 Read, eval, print loop for C
