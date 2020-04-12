@@ -6,6 +6,7 @@
 #define _DYLIB_H
 
 #include "re.h"
+#include "flags.h"
 
 #include <stdint.h>
 
@@ -22,15 +23,18 @@ const char *lib = "dls/*.so";
 
 const char *pipe = "> /dev/null 2> /dev/null";
 
+const char *temp_function = "tmpfnctn";
+
 const char *var_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+;";
-const char *fun_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\((.|\n)*\\)[ \t\n]*;";
+
+const char *fun_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\([^{]*\\)[ \t\n]*;";
 const char *fun_int = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\((.|\n)*\\)[ \t\n]*\\{";
 
 regex_t var_dec_re;
 regex_t fun_dec_re;
 regex_t fun_int_re;
 
-typedef void (*function)(void);
+typedef void (*function_t)(void);
 
 void init_loader(void);
 void reset_loader(void);
@@ -39,7 +43,7 @@ uint32_t num_length(uint32_t num);
 
 void add_to_scope(char *declaration, char *prefix);
 
-void *eval(char *function, uint32_t num);
-void write_lib(char *content, char *name);
+flag_t eval(char *function, uint32_t num);
+int8_t write_lib(char *content, char *name);
 
 #endif

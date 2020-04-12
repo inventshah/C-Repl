@@ -5,8 +5,6 @@
 #ifndef _READ_H
 #define _READ_H
 
-#include <stdint.h>
-
 #define BUFFER_SIZE 1024
 
 char *read(void);

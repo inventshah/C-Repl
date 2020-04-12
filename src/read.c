@@ -44,10 +44,12 @@ char *read(void)
 		total_brackets += count_brackets(buffer, length);
 
 		if (total_brackets == 0 && buffer[length - 1] == ';') break;
-		if (total_brackets == 0) break;
+		if (total_brackets == 0 && buffer != root) break;
 
+		buffer[length] = '\n';
 		buffer += length;
-		current_size += length;
+		buffer++;
+		current_size += length + 1;
 
 		if (current_size * 1.25 > size)
 		{

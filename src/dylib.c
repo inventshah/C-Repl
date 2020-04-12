@@ -3,6 +3,7 @@
 // Dynamic library compiler & loader
 
 #include "dylib.h"
+#include "flags.h"
 #include "re.h"
 #include "utils.h"
 
@@ -50,12 +51,14 @@ uint32_t num_length(uint32_t num)
 	return floor(log10(num)) + 1;
 }
 
-void *eval(char *content, uint32_t num)
+flag_t eval(char *content, uint32_t num)
 {
 	char *source, *library, *compile;
 	void *ctr = NULL;
 	uint32_t len = num_length(num);
-	function foo = NULL;
+	function_t foo = NULL;
+	int8_t delete_source;
+	flag_t ret = ERROR;
 
 	// Create source .c file name
 	source = (char *) calloc(sizeof(char), SRC_N + len + 3);
@@ -72,47 +75,72 @@ void *eval(char *content, uint32_t num)
 	check_null(compile, "calloc failed to find space for compile name");
 	sprintf(compile, "%s%s %s %s %s", gcc, library, source, lib, pipe);
 
-	write_lib(content, source);
-	
-	// Compile function
+	delete_source = write_lib(content, source);
+
 	if (system(compile) == 0)
 	{
 		ctr = dlopen(library, RTLD_NOW | RTLD_GLOBAL);
 		if (ctr != NULL)
 		{
-			foo = (function) dlsym(ctr, "foo");
+			foo = (function_t) dlsym(ctr, temp_function);
 			if (foo != NULL) foo();
 		}
+		ret = SUCCESS;
 	}
-	else
+	else add_to_scope("", "");
+
+	if (delete_source == 1)
 	{
 		sprintf(compile, "rm -f %s", source);
 		system(compile);
+		sprintf(compile, "rm -f %s", library);
+		system(compile);
+		if (ctr != NULL) dlclose(ctr);
+		if (ret == SUCCESS) ret = NO_SOURCE;
 	}
 
 	free(library);
 	free(compile);
 	free(source);
 
-	return ctr;
+	return ret;
 }
 
 void add_to_scope(char *declaration, char* prefix)
 {
+	static long int last_entry = 0;
+	static long int offset = 0;
+	long int temp;
 	FILE *fp;
 	fpos_t pos;
 
-	fp = fopen("scope.h", "a");
+	fp = fopen("scope.h", "r+");
 	check_null(fp, "failed to open scope header");
 
-	fprintf(fp, "%s%s\n", prefix, declaration);
+	fseek(fp, offset, SEEK_END);
+
+	if (declaration[0] == '\0' && prefix[0] == '\0')
+	{
+		temp = ftell(fp);
+		offset = last_entry - temp;
+		fseek(fp, last_entry, SEEK_SET);
+		while (temp-- > last_entry) fprintf(fp, " ");
+	}
+	else
+	{
+		last_entry = ftell(fp);
+		offset = 0;
+
+		fprintf(fp, "%s%s\n", prefix, declaration);
+	}
 
 	fclose(fp);
 }
 
-void write_lib(char *content, char *name)
+int8_t write_lib(char *content, char *name)
 {
 	FILE *fp;
+	int8_t ret = 0;
 
 	fp = fopen(name, "w");
 	check_null(fp, "failed to open source file");
@@ -124,10 +152,16 @@ void write_lib(char *content, char *name)
 	{
 		add_to_scope(content, "extern ");
 		fprintf(fp, "%s\n", content);
+		fprintf(fp, "void %s(void){ /* do nothing */ }\n", temp_function);
 	}
-	else if(match(&fun_dec_re, NULL, 0, content) == 1) add_to_scope(content, "");
-	else if (match(&fun_int_re, NULL, 0, content) == 1) fprintf(fp, "%s\n", content);
-	else fprintf(fp, "void foo(void)\n{\n%s\n}\n", content);
+	else if(match(&fun_dec_re, NULL, 0, content) == 1 || match(&fun_int_re, NULL, 0, content) == 1)
+	{
+		add_to_scope(content, "");
+		ret = 1;
+	}
+	else fprintf(fp, "void %s(void)\n{\n%s\n}\n", temp_function, content);
 
 	fclose(fp);
+
+	return ret;
 }
