@@ -46,10 +46,8 @@ char *read(void)
 		if (total_brackets == 0 && buffer[length - 1] == ';') break;
 		if (total_brackets == 0 && buffer != root) break;
 
-		buffer[length] = '\n';
 		buffer += length;
-		buffer++;
-		current_size += length + 1;
+		current_size += length;
 
 		if (current_size * 1.25 > size)
 		{

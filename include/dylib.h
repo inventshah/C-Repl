@@ -26,11 +26,13 @@ const char *pipe = "> /dev/null 2> /dev/null";
 const char *temp_function = "tmpfnctn";
 
 const char *var_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+;";
+const char *var_int = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+([ \t\n]*[=].*)?;";
 
 const char *fun_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\([^{]*\\)[ \t\n]*;";
 const char *fun_int = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\((.|\n)*\\)[ \t\n]*\\{";
 
 regex_t var_dec_re;
+regex_t var_int_re;
 regex_t fun_dec_re;
 regex_t fun_int_re;
 

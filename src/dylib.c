@@ -12,11 +12,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 void init_loader(void)
 {
 	FILE *header;
 	compile_regex(&var_dec_re, var_dec);
+	compile_regex(&var_int_re, var_int);
+
 	compile_regex(&fun_dec_re, fun_dec);
 	compile_regex(&fun_int_re, fun_int);
 
@@ -36,8 +39,11 @@ void init_loader(void)
 void reset_loader(void)
 {
 	regfree(&var_dec_re);
+	regfree(&var_int_re);
 	regfree(&fun_dec_re);
 	regfree(&fun_int_re);
+
+	add_to_scope("x", "");
 
 	system("rm -f dls/*");
 	system("rm -f scope.h");
@@ -87,9 +93,9 @@ flag_t eval(char *content, uint32_t num)
 		}
 		ret = SUCCESS;
 	}
-	else add_to_scope("", "");
+	else if ((delete_source & 2) == 2) add_to_scope("", "");
 
-	if (delete_source == 1)
+	if ((delete_source & 1) == 1)
 	{
 		sprintf(compile, "rm -f %s", source);
 		system(compile);
@@ -137,27 +143,63 @@ void add_to_scope(char *declaration, char* prefix)
 	fclose(fp);
 }
 
+void write_null(FILE *fp)
+{
+	fprintf(fp, "void %s(void){ /* do nothing */ }\n", temp_function);
+}
+
 int8_t write_lib(char *content, char *name)
 {
 	FILE *fp;
 	int8_t ret = 0;
+	char *kill_char = NULL;
 
 	fp = fopen(name, "w");
 	check_null(fp, "failed to open source file");
 
 	fprintf(fp, "#include \"../scope.h\"\n\n");
 
-	if (content[0] == '#') add_to_scope(content, "");
+	if (content[0] == '#')
+	{
+		add_to_scope(content, "");
+		ret = 3;
+	}
 	else if (match(&var_dec_re, NULL, 0, content) == 1)
 	{
 		add_to_scope(content, "extern ");
 		fprintf(fp, "%s\n", content);
-		fprintf(fp, "void %s(void){ /* do nothing */ }\n", temp_function);
+		write_null(fp);
+		ret = 2;
 	}
-	else if(match(&fun_dec_re, NULL, 0, content) == 1 || match(&fun_int_re, NULL, 0, content) == 1)
+	else if (match(&var_int_re, NULL, 0, content) == 1)
+	{
+		fprintf(fp, "%s\n", content);
+		write_null(fp);
+
+		kill_char = strpbrk(content, "=");
+		kill_char[0] = ';';
+		kill_char[1] = '\0';
+
+		add_to_scope(content, "extern ");
+		ret = 2;
+	}
+	else if (match(&fun_int_re, NULL, 0, content) == 1)
+	{
+		fprintf(fp, "%s\n", content);
+		write_null(fp);
+
+		kill_char = strpbrk(content, "{");
+		kill_char[0] = ';';
+		kill_char[1] = '\0';
+
+		add_to_scope(content, "");
+		ret = 2;
+	}
+	else if(match(&fun_dec_re, NULL, 0, content) == 1)
 	{
 		add_to_scope(content, "");
-		ret = 1;
+		write_null(fp);
+		ret = 3;
 	}
 	else fprintf(fp, "void %s(void)\n{\n%s\n}\n", temp_function, content);
 

@@ -17,6 +17,12 @@ int main(int argc, char **argv)
 	{
 		str = read();
 		if (strcmp(str, "quit;") == 0) break;
+		if (strcmp(str, "clear;") == 0)
+		{
+			reset_loader();
+			init_loader();
+			continue;
+		}
 
 		code = eval(str, num++);
 
