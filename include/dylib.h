@@ -25,8 +25,8 @@ const char *pipe = "> /dev/null 2> /dev/null";
 
 const char *temp_function = "tmpfnctn";
 
-const char *var_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+;";
-const char *var_int = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+([ \t\n]*[=].*)?;";
+const char *var_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9, \t]|\\[|\\])+;";
+const char *var_int = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+([ \t\n]*[=](.|\n)*)?;";
 
 const char *fun_dec = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\([^{]*\\)[ \t\n]*;";
 const char *fun_int = "^[a-zA-Z_ *]+[ \t\n*]+([a-zA-Z_0-9]|\\[|\\])+[ \t\n]*\\((.|\n)*\\)[ \t\n]*\\{";
@@ -38,7 +38,11 @@ regex_t fun_int_re;
 
 typedef void (*function_t)(void);
 
+void init_regex(void);
+void free_regex(void);
+
 void init_loader(void);
+void clear_loader(void);
 void reset_loader(void);
 
 uint32_t num_length(uint32_t num);

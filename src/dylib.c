@@ -14,41 +14,60 @@
 #include <stdint.h>
 #include <string.h>
 
-void init_loader(void)
+void init_regex(void)
 {
-	FILE *header;
 	compile_regex(&var_dec_re, var_dec);
 	compile_regex(&var_int_re, var_int);
 
 	compile_regex(&fun_dec_re, fun_dec);
 	compile_regex(&fun_int_re, fun_int);
+}
 
-	// Clear previous libraries
-	system("rm -f dls/*");
+void free_regex(void)
+{
+	regfree(&var_dec_re);
+	regfree(&var_int_re);
 
-	// Add the inital empty library
-	system("gcc -shared -fpic -o dls/libsempty.so empty.c");
+	regfree(&fun_dec_re);
+	regfree(&fun_int_re);
+}
 
-	header = fopen("scope.h", "w");
-	check_null(header, "failed to open scope file");
-	fprintf(header, "#include <stdio.h>\n#include <stdlib.h>\n\n");
+void create_scope(void)
+{
+	FILE *scope;
+	
+	if ((scope = fopen("scope.h", "r")) == NULL)
+	{
+		scope = fopen("scope.h", "w");
+		check_null(scope, "failed to create scope file");
 
-	fclose(header);
+		fprintf(scope, "#include <stdio.h>\n#include <stdlib.h>\n\n");
+
+		fclose(scope);
+	}
+}
+
+void init_loader(void)
+{
+	FILE *header;
+	init_regex();
+
+	clear_loader();
+	create_scope();
+}
+
+void clear_loader(void)
+{
+	system("find dls -type f ! -name \"libsempty.so\" -delete");
+	system("rm -f scope.h");
 }
 
 void reset_loader(void)
 {
-	regfree(&var_dec_re);
-	regfree(&var_int_re);
-	regfree(&fun_dec_re);
-	regfree(&fun_int_re);
-
 	add_to_scope("x", "");
 
-	system("rm -f dls/*");
-	system("rm -f scope.h");
-
-	system("gcc -shared -fpic -o dls/libsempty.so empty.c");
+	clear_loader();
+	create_scope();
 }
 
 uint32_t num_length(uint32_t num)
@@ -61,10 +80,12 @@ flag_t eval(char *content, uint32_t num)
 {
 	char *source, *library, *compile;
 	void *ctr = NULL;
-	uint32_t len = num_length(num);
+	uint32_t len;
 	function_t foo = NULL;
 	int8_t delete_source;
 	flag_t ret = ERROR;
+
+	len = num_length(num);
 
 	// Create source .c file name
 	source = (char *) calloc(sizeof(char), SRC_N + len + 3);

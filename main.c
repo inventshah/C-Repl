@@ -20,7 +20,6 @@ int main(int argc, char **argv)
 		if (strcmp(str, "clear;") == 0)
 		{
 			reset_loader();
-			init_loader();
 			continue;
 		}
 
@@ -37,5 +36,6 @@ int main(int argc, char **argv)
 	}
 
 	free(str);
-	reset_loader();
+	clear_loader();
+	free_regex();
 }
