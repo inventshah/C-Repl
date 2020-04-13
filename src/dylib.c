@@ -41,7 +41,7 @@ void create_scope(void)
 		scope = fopen("scope.h", "w");
 		check_null(scope, "failed to create scope file");
 
-		fprintf(scope, "#include <stdio.h>\n#include <stdlib.h>\n\n");
+		fprintf(scope, "#include \"repl.h\"\n\n");
 
 		fclose(scope);
 	}
@@ -185,6 +185,18 @@ int8_t write_lib(char *content, char *name)
 		add_to_scope(content, "");
 		ret = 3;
 	}
+	else if (content[0] == '%')
+	{
+		content[strlen(content) - 1] = '\0';
+		kill_char = strpbrk(content, " ");
+		if (kill_char != NULL)
+		{
+			kill_char[0] = '\0';
+			kill_char++;
+			fprintf(fp, "void %s(void)\n{\nprintf(\"%s = %%%s\\n\", %s);\n}\n", temp_function, kill_char, content + 1, kill_char);
+		}
+		else fprintf(fp, "@");
+	}
 	else if (match(&var_dec_re, NULL, 0, content) == 1)
 	{
 		add_to_scope(content, "extern ");
@@ -216,11 +228,19 @@ int8_t write_lib(char *content, char *name)
 		add_to_scope(content, "");
 		ret = 2;
 	}
-	else if(match(&fun_dec_re, NULL, 0, content) == 1)
+	else if (match(&fun_dec_re, NULL, 0, content) == 1)
 	{
 		add_to_scope(content, "");
 		write_null(fp);
 		ret = 3;
+	}
+	else if (strpbrk(content, " ") == NULL)
+	{
+		content[strlen(content) - 1] = '\0';
+		fprintf(fp, "void %s(void)\n{\n", temp_function);
+		fprintf(fp, "char buffer[16] = \"\";");
+		fprintf(fp, "sprintf(buffer, \"%%%%s = %%%%%%s\\n\", typeof(%s));\n", content);
+		fprintf(fp, "printf(buffer, \"%s\", %s);\n}", content, content);
 	}
 	else fprintf(fp, "void %s(void)\n{\n%s\n}\n", temp_function, content);
 
