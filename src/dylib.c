@@ -197,6 +197,12 @@ int8_t write_lib(char *content, char *name)
 		}
 		else fprintf(fp, "@");
 	}
+	else if (strstr(content, "typedef") != NULL || strstr(content, "struct") == content)
+	{
+		add_to_scope(content, "");
+		write_null(fp);
+		ret = 2;
+	}
 	else if (match(&var_dec_re, NULL, 0, content) == 1)
 	{
 		add_to_scope(content, "extern ");

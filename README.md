@@ -5,6 +5,7 @@ Read, eval, print loop for C
 * POSIX system
 * dlfcn.h
 * regex.h
+* gcc
 
 ### How to use:
 
