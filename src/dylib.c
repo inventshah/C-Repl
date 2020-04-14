@@ -239,7 +239,7 @@ int8_t write_lib(char *content, char *name)
 		content[strlen(content) - 1] = '\0';
 		fprintf(fp, "void %s(void)\n{\n", temp_function);
 		fprintf(fp, "char buffer[16] = \"\";");
-		fprintf(fp, "sprintf(buffer, \"%%%%s = %%%%%%s\\n\", typeof(%s));\n", content);
+		fprintf(fp, "sprintf(buffer, \"%%%%s = %%%%%%s\\n\", typef(%s));\n", content);
 		fprintf(fp, "printf(buffer, \"%s\", %s);\n}", content, content);
 	}
 	else fprintf(fp, "void %s(void)\n{\n%s\n}\n", temp_function, content);
